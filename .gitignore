@@ -1,0 +1,8 @@
+build
+dist
+*.onnx.optimized
+Makefile
+*/**/*.png
+!assets/*.png
+!scripts/*.py
+scripts

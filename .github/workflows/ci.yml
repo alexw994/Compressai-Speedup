@@ -1,0 +1,37 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'  # 例如 v1.0.0 会触发
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+
+    - name: ci in docker container
+      id: cmake
+      run: |
+        docker run -v ${PWD}:/project -w /project quay.io/pypa/manylinux2014_x86_64 /bin/bash -c "
+        mkdir build && mkdir dist && cd build && cmake -DCMAKE_INSTALL_PREFIX=/project/dist .. && make -j 8 && make install"
+
+    - name: package build result
+      if: steps.cmake.outcome == 'success'
+      run: |
+          cd dist
+          sudo tar -czf cmpai-codec-linux-x64.tar.gz \
+            bin/ \
+            lib/ \
+            include/
+    
+    - name: upload release asset
+      if: steps.cmake.outcome == 'success'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/cmpai-codec-linux-x64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
